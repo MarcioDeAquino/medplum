@@ -6,50 +6,6 @@ A Medplum bot that automatically responds to messages from practitioners in comm
 
 The Auto-Responder Bot is a demonstration bot that shows how to create automated responses to FHIR Communication resources. When a practitioner sends a message in a communication thread, this bot automatically generates and sends a predefined response back to the practitioner after each message from the practitioner.
 
-## Functionality
-
-The bot performs the following actions:
-
-1. **Monitors Communication Resources**: Listens for new Communication resources being created
-2. **Validates Sender**: Only responds to messages sent by practitioners (resources with `sender.reference` starting with `Practitioner/`)
-3. **Validates Thread Context**: Only responds to messages that are part of an existing communication thread (have `partOf` references to other Communication resources)
-4. **Prevents Bot Response Loops**: Checks the `note` field to avoid responding to messages that are already auto-generated responses (containing "Auto-generated response" text)
-5. **Generates Auto-Response**: Creates a new Communication resource with:
-   - Status: `in-progress`
-   - Sender: The original recipient (typically a patient)
-   - Recipient: The original sender (the practitioner)
-   - Payload: A predefined message: "This is an auto generated response"
-   - PartOf: Links to the same communication thread
-   - Note: Contains "Auto-generated response" to mark it as an automated message
-
-## Code Structure
-
-### Main Handler (`auto-responder-bot.ts`)
-
-The main bot logic is contained in the `handler` function:
-
-```typescript
-export async function handler(
-  medplum: MedplumClient,
-  event: BotEvent<Communication>
-): Promise<Communication | undefined>;
-```
-
-### Key Logic
-
-1. **Sender Validation**: Checks if the message sender is a practitioner
-2. **Thread Validation**: Ensures the message is part of a communication thread
-3. **Bot Response Prevention**: Checks the `note` field to avoid responding to messages that are already auto-generated responses
-4. **Response Creation**: Generates an automated response with reversed sender/recipient roles and marks it with an "Auto-generated response" note
-
-## Usage
-
-### Prerequisites
-
-- Medplum account with bot creation permissions
-- Understanding of FHIR Communication resources
-- Access to the Medplum SDK
-
 ### Setup
 
 1. Deploy the bot to your Medplum instance
@@ -75,19 +31,6 @@ export async function handler(
    ```
 3. Ensure proper permissions for the bot to read and create Communication resources
 
-### Configuration
-
-The bot requires no additional configuration or secrets. It uses a hardcoded response message that can be customized by modifying the `contentString` in the payload.
-
-## Testing
-
-The bot includes comprehensive tests in `auto-responder-bot.test.ts` that cover:
-
-- **Successful Auto-Response**: Verifies that the bot responds correctly to practitioner messages
-- **Non-Practitioner Sender**: Confirms the bot ignores messages from non-practitioners
-- **Missing Thread Context**: Ensures the bot doesn't respond to standalone messages
-- **Bot Response Prevention**: Confirms the bot doesn't respond to messages that are already auto-generated responses
-
 ### Running Tests
 
 ```bash
@@ -103,20 +46,3 @@ npm test auto-responder-bot.test.ts
 5. The bot creates an automated response from the patient back to the practitioner
 6. The response appears in the same communication thread
 7. This process repeats for each subsequent message from the practitioner
-
-## Customization
-
-To customize the bot's behavior:
-
-- **Response Message**: Modify the `contentString` in the payload
-- **Sender Types**: Change the practitioner check to respond to other resource types
-- **Response Logic**: Add more sophisticated response generation based on message content
-- **Thread Validation**: Modify the thread validation logic for different use cases
-
-## Limitations
-
-- Uses a static response message
-- Only validates practitioner senders
-- Requires messages to be part of a communication thread
-- Requires a properly configured Subscription resource to trigger the bot
-- Relies on the "Auto-generated response" note text to prevent response loops (this text must be consistent)
