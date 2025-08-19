@@ -3,13 +3,12 @@
 
 /**
  * Auto-responder bot (demo).
- * Create a new message once to the first Practitioner message in a thread
+ * Create a new message after each Practitioner message in a thread
  * by creating a new Communication with a predefined message.
- * Skips if an auto-response already exists for that thread.
  */
 
 import { BotEvent, MedplumClient } from '@medplum/core';
-import { Communication } from '@medplum/fhirtypes';
+import { Communication, Patient, Reference } from '@medplum/fhirtypes';
 
 export async function handler(
   medplum: MedplumClient,
@@ -23,19 +22,10 @@ export async function handler(
     return undefined;
   }
 
-  const previousAutoResponse = await medplum.searchResources(
-    'Communication',
-    `identifier=auto-response-${communication.partOf[0].reference}`
-  );
-
-  if (previousAutoResponse.length > 0) {
-    return undefined;
-  }
-
   const autoResponse = await medplum.createResource<Communication>({
     resourceType: 'Communication',
     status: 'in-progress',
-    sender: undefined,
+    sender: communication.recipient?.[0] as Reference<Patient>,
     recipient: [communication.sender],
     payload: [
       {
@@ -43,7 +33,6 @@ export async function handler(
       },
     ],
     partOf: communication.partOf,
-    identifier: [{ system: 'http://example.com', value: `auto-response-${communication.partOf[0].reference}` }],
   });
 
   return autoResponse;
