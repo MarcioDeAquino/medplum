@@ -2,9 +2,14 @@
 // SPDX-License-Identifier: Apache-2.0
 
 /**
- * Auto-responder bot (demo).
- * Create a new message after each Practitioner message in a thread
- * by creating a new Communication with a predefined message.
+ * Auto-responder bot that generates automated responses to practitioner messages.
+ *
+ * Only responds to messages from practitioners in communication threads.
+ * Prevents infinite loops by checking for "Auto-generated response" in the note field.
+ *
+ * @param medplum - The Medplum client instance
+ * @param event - The bot event containing the Communication resource
+ * @returns A new Communication resource with auto-response, or undefined
  */
 
 import { BotEvent, MedplumClient } from '@medplum/core';
