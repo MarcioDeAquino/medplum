@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: Copyright Orangebot, Inc. and Medplum contributors
 // SPDX-License-Identifier: Apache-2.0
 import { MockClient } from '@medplum/mock';
-import { expect, test } from 'vitest';
+import { expect, test, vi, beforeEach, afterEach, describe } from 'vitest';
 import { handler } from './auto-responder-bot';
 import { ContentType, createReference } from '@medplum/core';
 import { Communication, Practitioner, Patient, Bot } from '@medplum/fhirtypes';
@@ -12,8 +12,14 @@ describe('Auto Responder Bot', () => {
   let patient: Patient;
   let thread: Communication;
   let bot: Bot;
+  let mockDate: Date;
 
   beforeEach(async () => {
+    // Mock the date to a fixed timestamp for consistent testing
+    mockDate = new Date('2024-01-15T10:30:00.000Z');
+    vi.useFakeTimers();
+    vi.setSystemTime(mockDate);
+
     medplum = new MockClient();
     practitioner = await medplum.createResource<Practitioner>({
       resourceType: 'Practitioner',
@@ -38,6 +44,11 @@ describe('Auto Responder Bot', () => {
     });
   });
 
+  afterEach(() => {
+    // Restore real timers after each test
+    vi.useRealTimers();
+  });
+
   test('Send automatic response message if sender is Practitioner', async () => {
     const communication = await medplum.createResource({
       resourceType: 'Communication',
@@ -46,6 +57,7 @@ describe('Auto Responder Bot', () => {
       recipient: [createReference(patient)],
       payload: [{ contentString: 'Hello' }],
       partOf: [createReference(thread)],
+      sent: mockDate.toISOString(),
     });
 
     const communicationAutoResponse = (await handler(medplum, {
@@ -62,6 +74,7 @@ describe('Auto Responder Bot', () => {
     expect(communicationAutoResponse?.recipient).toEqual([createReference(practitioner)]);
     expect(communicationAutoResponse?.payload).toEqual([{ contentString: 'This is an auto generated response' }]);
     expect(communicationAutoResponse?.partOf).toEqual([createReference(thread)]);
+    expect(communicationAutoResponse?.sent).toEqual(mockDate.toISOString());
   });
 
   test('Skip non-Practitioner sender', async () => {
@@ -72,6 +85,7 @@ describe('Auto Responder Bot', () => {
       recipient: [createReference(practitioner)],
       payload: [{ contentString: 'Hello' }],
       partOf: [createReference(thread)],
+      sent: mockDate.toISOString(),
     });
 
     const communicationAutoResponse = await handler(medplum, {

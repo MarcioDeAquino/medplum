@@ -33,6 +33,7 @@ export async function handler(
       },
     ],
     partOf: communication.partOf,
+    sent: new Date().toISOString(),
   });
 
   return autoResponse;
