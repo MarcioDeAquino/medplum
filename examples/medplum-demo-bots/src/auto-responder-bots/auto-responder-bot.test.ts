@@ -4,7 +4,7 @@ import { MockClient } from '@medplum/mock';
 import { expect, test, vi, beforeEach, afterEach, describe } from 'vitest';
 import { handler } from './auto-responder-bot';
 import { ContentType, createReference } from '@medplum/core';
-import { Communication, Practitioner, Patient, Bot } from '@medplum/fhirtypes';
+import { Communication, Practitioner, Patient, Bot, Annotation } from '@medplum/fhirtypes';
 
 describe('Auto Responder Bot', () => {
   let medplum: MockClient;
@@ -75,6 +75,7 @@ describe('Auto Responder Bot', () => {
     expect(communicationAutoResponse?.payload).toEqual([{ contentString: 'This is an auto generated response' }]);
     expect(communicationAutoResponse?.partOf).toEqual([createReference(thread)]);
     expect(communicationAutoResponse?.sent).toEqual(mockDate.toISOString());
+    expect(communicationAutoResponse?.note).toEqual([{ text: 'Auto-generated response' }]);
   });
 
   test('Skip non-Practitioner sender', async () => {
@@ -105,6 +106,28 @@ describe('Auto Responder Bot', () => {
       sender: createReference(practitioner),
       recipient: [createReference(patient)],
       payload: [{ contentString: 'Hello' }],
+    });
+
+    const communicationAutoResponse = await handler(medplum, {
+      bot: createReference(bot),
+      input: communication,
+      contentType: ContentType.FHIR_JSON,
+      secrets: {},
+    });
+
+    expect(communicationAutoResponse).toBeUndefined();
+  });
+
+  test('Skip if already auto-generated', async () => {
+    const communication = await medplum.createResource({
+      resourceType: 'Communication',
+      status: 'in-progress',
+      sender: createReference(practitioner),
+      recipient: [createReference(patient)],
+      payload: [{ contentString: 'This is a auto-generated response' }],
+      partOf: [createReference(thread)],
+      sent: mockDate.toISOString(),
+      note: [{ text: 'Auto-generated response' }],
     });
 
     const communicationAutoResponse = await handler(medplum, {

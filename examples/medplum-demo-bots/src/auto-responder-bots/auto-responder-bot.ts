@@ -21,6 +21,9 @@ export async function handler(
   if (!communication.partOf?.find((partOf) => partOf.reference?.startsWith('Communication/'))) {
     return undefined;
   }
+  if (communication.note?.find((note) => note.text?.includes('Auto-generated response'))) {
+    return undefined;
+  }
 
   const autoResponse = await medplum.createResource<Communication>({
     resourceType: 'Communication',
@@ -34,6 +37,7 @@ export async function handler(
     ],
     partOf: communication.partOf,
     sent: new Date().toISOString(),
+    note: [{ text: 'Auto-generated response' }],
   });
 
   return autoResponse;
