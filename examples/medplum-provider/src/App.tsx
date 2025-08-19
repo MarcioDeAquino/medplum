@@ -14,6 +14,7 @@ import {
   IconClipboardCheck,
   IconMail,
   IconPencil,
+  IconPill,
   IconTimeDuration0,
   IconTransformPoint,
   IconUser,
@@ -28,6 +29,7 @@ import { IntegrationsPage } from './pages/IntegrationsPage';
 import { SchedulePage } from './pages/SchedulePage';
 import { SearchPage } from './pages/SearchPage';
 import { SignInPage } from './pages/SignInPage';
+import { DoseSpotFavoritesPage } from './pages/integrations/DoseSpotFavoritesPage';
 import { EncounterChart } from './pages/encounter/EncounterChart';
 import { EncounterModal } from './pages/encounter/EncounterModal';
 import { CommunicationTab } from './pages/patient/CommunicationTab';
@@ -75,7 +77,7 @@ export function App(): JSX.Element | null {
         },
         {
           title: 'Communication',
-          links: [{ icon: <IconMail />, label: 'Messages', href: '/messages' }],
+          links: [{ icon: <IconMail />, label: 'Messages', href: '/Message' }],
         },
         {
           title: 'Tasks',
@@ -87,7 +89,10 @@ export function App(): JSX.Element | null {
         },
         {
           title: 'Integrations',
-          links: [{ icon: <IconTransformPoint />, label: 'Integrations', href: '/integrations' }],
+          links: [
+            { icon: <IconTransformPoint />, label: 'Integrations', href: '/integrations' },
+            ...(hasDoseSpot ? [{ icon: <IconPill />, label: 'DoseSpot', href: '/integrations/dosespot' }] : []),
+          ],
         },
       ]}
       resourceTypeSearchDisabled={true}
@@ -136,7 +141,10 @@ export function App(): JSX.Element | null {
                 </Route>
                 <Route path="" element={<TimelineTab />} />
               </Route>
-              <Route path="/messages" element={<MessagesPage />} />
+              <Route path="/Message" element={<MessagesPage />}>
+                <Route index element={<MessagesPage />} />
+                <Route path=":messageId" element={<MessagesPage />} />
+              </Route>
               <Route path="/Task" element={<TasksPage />}>
                 <Route index element={<TaskSelectEmpty />} />
                 <Route path=":taskId" element={<TaskDetails />} />
@@ -153,6 +161,7 @@ export function App(): JSX.Element | null {
                 <Route path="edit" element={<ResourceEditPage />} />
                 <Route path="history" element={<ResourceHistoryPage />} />
               </Route>
+              {hasDoseSpot && <Route path="/integrations/dosespot" element={<DoseSpotFavoritesPage />} />}
             </>
           ) : (
             <>
